@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quiz Quest</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background: radial-gradient(circle at top right, #1e293b, #0f172a);
+            min-height: 100vh;
+            color: #f8fafc;
+        }
+        .glass {
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .option-btn {
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .option-btn:hover:not(:disabled) {
+            transform: translateX(8px);
+            background: rgba(59, 130, 246, 0.1);
+            border-color: #3b82f6;
+        }
+        .correct {
+            background: rgba(34, 197, 94, 0.2) !important;
+            border-color: #22c55e !important;
+            color: #4ade80 !important;
+        }
+        .wrong {
+            background: rgba(239, 68, 68, 0.2) !important;
+            border-color: #ef4444 !important;
+            color: #f87171 !important;
+        }
+        .hidden-section { display: none; }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fade {
+            animation: fadeIn 0.4s ease-out forwards;
+        }
+    </style>
+</head>
+<body class="p-4 flex flex-col items-center">
+
+    <!-- Navbar -->
+    <nav id="navbar" class="w-full max-w-4xl flex justify-between items-center mb-8 px-6 py-4 glass rounded-2xl hidden-section">
+        <div class="flex items-center gap-2">
+            <div class="w-8 h-8 bg-blue-500 rounded-lg flex items-center justify-center font-bold">Q</div>
+            <span class="font-bold tracking-tight">Quiz Quest</span>
+        </div>
+        <div class="flex items-center gap-4">
+            <span id="user-display" class="text-sm text-slate-400"></span>
+            <button onclick="logout()" class="text-sm font-semibold text-red-400 hover:text-red-300 transition-colors">Logout</button>
+        </div>
+    </nav>
+
+    <div id="main-container" class="w-full max-w-2xl glass rounded-3xl p-8 shadow-2xl relative overflow-hidden mt-4">
+        <!-- Decoration -->
+        <div class="absolute -top-24 -right-24 w-48 h-48 bg-blue-500/10 rounded-full blur-3xl"></div>
+        <div class="absolute -bottom-24 -left-24 w-48 h-48 bg-purple-500/10 rounded-full blur-3xl"></div>
+
+        <!-- 1. Login Screen -->
+        <div id="login-screen" class="text-center py-10 animate-fade">
+            <h1 class="text-4xl font-bold mb-4 bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">Welcome To the Quiz Quest</h1>
+            <p class="text-slate-400 mb-8">Please enter your name to start the challenge.</p>
+            <form onsubmit="handleLogin(event)" class="space-y-4 max-w-sm mx-auto">
+                <input type="text" id="username-input" required placeholder="Your Name" 
+                       class="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 focus:outline-none focus:border-blue-500 transition-all">
+                <button type="submit" class="w-full py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-semibold shadow-lg transition-all active:scale-95">
+                    Login
+                </button>
+            </form>
+        </div>
+
+        <!-- 2. Dashboard / Subject Selection -->
+        <div id="dashboard" class="hidden-section animate-fade">
+            <h2 class="text-2xl font-bold mb-2">Choose a Subject</h2>
+            <p class="text-slate-400 mb-8 text-sm">Select a category to test your expertise.</p>
+            
+            <div class="grid grid-cols-1 gap-4">
+                <button onclick="selectSubject('Science')" class="flex items-center justify-between p-6 rounded-2xl bg-slate-800/50 border border-slate-700 hover:border-blue-500 transition-all group">
+                    <div class="text-left">
+                        <h3 class="font-bold text-lg">Science</h3>
+                        <p class="text-sm text-slate-400">Space, Physics, and Nature</p>
+                    </div>
+                    <span class="text-blue-500 group-hover:translate-x-2 transition-transform">→</span>
+                </button>
+                <button onclick="selectSubject('History')" class="flex items-center justify-between p-6 rounded-2xl bg-slate-800/50 border border-slate-700 hover:border-purple-500 transition-all group">
+                    <div class="text-left">
+                        <h3 class="font-bold text-lg text-purple-400">History</h3>
+                        <p class="text-sm text-slate-400">Events that shaped the world</p>
+                    </div>
+                    <span class="text-purple-500 group-hover:translate-x-2 transition-transform">→</span>
+                </button>
+                <button onclick="selectSubject('Technology')" class="flex items-center justify-between p-6 rounded-2xl bg-slate-800/50 border border-slate-700 hover:border-green-500 transition-all group">
+                    <div class="text-left">
+                        <h3 class="font-bold text-lg text-green-400">Technology</h3>
+                        <p class="text-sm text-slate-400">Computers, AI, and Innovation</p>
+                    </div>
+                    <span class="text-green-500 group-hover:translate-x-2 transition-transform">→</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- 3. Quiz Game Content -->
+        <div id="quiz-content" class="hidden-section">
+            <div class="flex justify-between items-center mb-6">
+                <span class="text-sm font-semibold text-blue-400 tracking-wider uppercase" id="current-category">Category</span>
+                <span class="text-sm font-medium text-slate-400" id="progress-text">Question 1 of 5</span>
+            </div>
+            <div class="w-full h-1.5 bg-slate-700 rounded-full mb-10 overflow-hidden">
+                <div id="progress-bar" class="h-full bg-blue-500 transition-all duration-500 ease-out" style="width: 0%"></div>
+            </div>
+            
+            <h2 id="question-text" class="text-2xl font-semibold mb-8 leading-tight">Loading...</h2>
+            <div id="options-grid" class="space-y-4 mb-8"></div>
+
+            <div class="flex justify-between items-center min-h-[40px]">
+                <p id="feedback-text" class="text-sm font-medium opacity-0 transition-opacity"></p>
+                <button id="next-btn" onclick="nextQuestion()" class="hidden px-6 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg font-medium transition-colors">
+                    Next Question
+                </button>
+            </div>
+        </div>
+
+        <!-- 4. Result Screen -->
+        <div id="result-screen" class="hidden-section text-center py-10 animate-fade">
+            <div class="mb-6 inline-block p-4 rounded-full bg-blue-500/10">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+            </div>
+            <h2 class="text-3xl font-bold mb-2">Quiz Completed!</h2>
+            <p class="text-slate-400 mb-6">Excellent effort on the <span id="res-category" class="text-white font-bold"></span> quiz.</p>
+            <div class="text-6xl font-bold text-white mb-8" id="final-score">0/0</div>
+            <div class="flex gap-4 justify-center">
+                <button onclick="backToDashboard()" class="px-8 py-3 bg-slate-800 hover:bg-slate-700 rounded-xl font-semibold transition-all">
+                    Dashboard
+                </button>
+                <button onclick="resetQuiz()" class="px-8 py-3 border border-slate-600 hover:bg-slate-800 rounded-xl font-semibold transition-all">
+                    Retake
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const allQuestions = {
+            Science: [
+                { question: "Which planet is known as the 'Red Planet'?", options: ["Venus", "Mars", "Jupiter", "Saturn"], correct: 1 },
+                { question: "What is the chemical symbol for Oxygen?", options: ["Ox", "O2", "O", "Og"], correct: 2 },
+                { question: "What is the hardest natural substance on Earth?", options: ["Gold", "Iron", "Diamond", "Quartz"], correct: 2 }
+            ],
+            History: [
+                { question: "Who was the first President of the United States?", options: ["Thomas Jefferson", "Abraham Lincoln", "George Washington", "John Adams"], correct: 2 },
+                { question: "In which year did World War II end?", options: ["1943", "1944", "1945", "1946"], correct: 2 },
+                { question: "Which ancient civilization built the Great Pyramid of Giza?", options: ["Romans", "Greeks", "Egyptians", "Mayans"], correct: 2 }
+            ],
+            Technology: [
+                { question: "What does CPU stand for?", options: ["Computer Processing Unit", "Central Peripheral Unit", "Central Processing Unit", "Core Power Unit"], correct: 2 },
+                { question: "Which company created the iPhone?", options: ["Microsoft", "Apple", "Samsung", "Google"], correct: 1 },
+                { question: "What is the most popular programming language for web dev?", options: ["Java", "C++", "JavaScript", "PHP"], correct: 2 }
+            ]
+        };
+
+        let activeQuestions = [];
+        let currentSubject = "";
+        let currentQuestionIndex = 0;
+        let score = 0;
+        let canAnswer = true;
+        let currentUser = null;
+
+        // UI References
+        const sections = ['login-screen', 'dashboard', 'quiz-content', 'result-screen'];
+        const navbar = document.getElementById('navbar');
+
+        function showSection(sectionId) {
+            sections.forEach(id => {
+                document.getElementById(id).style.display = (id === sectionId) ? 'block' : 'none';
+            });
+            navbar.style.display = (sectionId === 'login-screen') ? 'none' : 'flex';
+        }
+
+        // --- AUTH LOGIC ---
+        function handleLogin(e) {
+            e.preventDefault();
+            const username = document.getElementById('username-input').value.trim();
+            if (username) {
+                currentUser = username;
+                document.getElementById('user-display').innerText = `Hello, ${username}`;
+                showSection('dashboard');
+            }
+        }
+
+        function logout() {
+            currentUser = null;
+            document.getElementById('username-input').value = "";
+            showSection('login-screen');
+        }
+
+        // --- QUIZ LOGIC ---
+        function selectSubject(subject) {
+            currentSubject = subject;
+            activeQuestions = allQuestions[subject];
+            currentQuestionIndex = 0;
+            score = 0;
+            document.getElementById('current-category').innerText = subject;
+            showSection('quiz-content');
+            loadQuestion();
+        }
+
+        function loadQuestion() {
+            canAnswer = true;
+            document.getElementById('next-btn').classList.add('hidden');
+            document.getElementById('feedback-text').classList.add('opacity-0');
+            
+            const q = activeQuestions[currentQuestionIndex];
+            document.getElementById('question-text').innerText = q.question;
+            
+            // Progress
+            const progress = ((currentQuestionIndex + 1) / activeQuestions.length) * 100;
+            document.getElementById('progress-bar').style.width = `${progress}%`;
+            document.getElementById('progress-text').innerText = `Question ${currentQuestionIndex + 1} of ${activeQuestions.length}`;
+
+            // Options
+            const grid = document.getElementById('options-grid');
+            grid.innerHTML = '';
+            q.options.forEach((opt, idx) => {
+                const btn = document.createElement('button');
+                btn.innerText = opt;
+                btn.className = 'option-btn w-full text-left p-4 rounded-xl border border-slate-700 bg-slate-800/50 hover:bg-slate-800 focus:outline-none';
+                btn.onclick = () => checkAnswer(idx, btn);
+                grid.appendChild(btn);
+            });
+        }
+
+        function checkAnswer(idx, btn) {
+            if (!canAnswer) return;
+            canAnswer = false;
+
+            const correctIdx = activeQuestions[currentQuestionIndex].correct;
+            const buttons = document.getElementById('options-grid').querySelectorAll('button');
+            const feedback = document.getElementById('feedback-text');
+
+            if (idx === correctIdx) {
+                score++;
+                btn.classList.add('correct');
+                feedback.innerText = "Correct!";
+                feedback.className = "text-sm font-medium text-green-400 opacity-100";
+            } else {
+                btn.classList.add('wrong');
+                buttons[correctIdx].classList.add('correct');
+                feedback.innerText = "Incorrect.";
+                feedback.className = "text-sm font-medium text-red-400 opacity-100";
+            }
+
+            buttons.forEach(b => b.disabled = true);
+            document.getElementById('next-btn').classList.remove('hidden');
+            if (currentQuestionIndex === activeQuestions.length - 1) {
+                document.getElementById('next-btn').innerText = "Finish Quiz";
+            } else {
+                document.getElementById('next-btn').innerText = "Next Question";
+            }
+        }
+
+        function nextQuestion() {
+            if (currentQuestionIndex < activeQuestions.length - 1) {
+                currentQuestionIndex++;
+                loadQuestion();
+            } else {
+                showResults();
+            }
+        }
+
+        function showResults() {
+            showSection('result-screen');
+            document.getElementById('res-category').innerText = currentSubject;
+            document.getElementById('final-score').innerText = `${score} / ${activeQuestions.length}`;
+        }
+
+        function backToDashboard() {
+            showSection('dashboard');
+        }
+
+        function resetQuiz() {
+            selectSubject(currentSubject);
+        }
+
+        // Initialize view
+        showSection('login-screen');
+    </script>
+</body>
+</html>
